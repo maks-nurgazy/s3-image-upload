@@ -67,5 +67,5 @@ exports.handler = async (event: any, context: any, callback: any) => {
   headers["host"] = [{ key: "host", value: originB }];
   origin.s3.domainName = originB;
 
-  callback(null, request);
+  return request;
 };
