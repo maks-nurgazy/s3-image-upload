@@ -66,11 +66,19 @@ export class CustomStack extends Stack {
     });
   */
 
-    const myFunc = new lambda.Function(this, "MyFunction", {
+    const viewRequestFunc = new lambda.Function(this, "ViewerRequestFunc", {
       runtime: lambda.Runtime.NODEJS_14_X,
-      handler: "index.handler",
+      handler: "request.handler",
       code: lambda.Code.fromAsset(join(__dirname, "lambda-handler")),
-      memorySize: 256,
+      memorySize: 128,
+      role: myRole,
+    });
+
+    const originResponseFunc = new lambda.Function(this, "OriginRequestFunct", {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      handler: "response.handler",
+      code: lambda.Code.fromAsset(join(__dirname, "lambda-handler")),
+      memorySize: 128,
       role: myRole,
     });
 
@@ -97,8 +105,12 @@ export class CustomStack extends Stack {
           viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           edgeLambdas: [
             {
-              functionVersion: myFunc.currentVersion,
-              eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
+              functionVersion: viewRequestFunc.currentVersion,
+              eventType: LambdaEdgeEventType.VIEWER_REQUEST,
+            },
+            {
+              functionVersion: originResponseFunc.currentVersion,
+              eventType: LambdaEdgeEventType.ORIGIN_RESPONSE,
             },
           ],
         },
