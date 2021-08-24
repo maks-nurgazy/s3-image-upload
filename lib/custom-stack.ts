@@ -1,6 +1,11 @@
-import { AnyPrincipal, Effect, PolicyStatement, PrincipalBase } from "@aws-cdk/aws-iam";
+import { AnyPrincipal, Effect, ManagedPolicy, PolicyStatement, PrincipalBase, Role, ServicePrincipal } from "@aws-cdk/aws-iam";
 import { Bucket } from "@aws-cdk/aws-s3";
+import { Distribution, LambdaEdgeEventType, ViewerProtocolPolicy } from '@aws-cdk/aws-cloudfront';
 import { Construct, RemovalPolicy, Stack, StackProps } from '@aws-cdk/core';
+import { S3Origin } from '@aws-cdk/aws-cloudfront-origins';
+import { EdgeFunction } from "@aws-cdk/aws-cloudfront/lib/experimental/edge-function";
+import * as lambda from "@aws-cdk/aws-lambda";
+import { join } from 'path';
 
 
 export class CustomStack extends Stack {
@@ -27,6 +32,61 @@ export class CustomStack extends Stack {
 
    /* End of Bucket  creation*/
 
+   /* Creating Edge Lambda function*/
+
+    const myRole = new Role(this, 'My Role', {
+      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+    });
+
+    /*
+    f the stack is in us-east-1, a "normal" lambda.Function can be used instead of an EdgeFunction.
+    If you want to use EdgeFunction then uncomment below line and comment myFunc lambda function
+
+
+    const myFunc = new cloudfront.experimental.EdgeFunction(this, 'MyFunction', {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, 'lambda-handler')),
+      role: myRole
+    });
+  */
+
+
+   const myFunc = new lambda.Function(this, 'MyFunction', {
+    runtime: lambda.Runtime.NODEJS_14_X,
+    handler: 'index.handler',
+    code: lambda.Code.fromAsset(join(__dirname, 'lambda-handler')),
+    memorySize: 256,
+    role: myRole
+    });
+
+    myRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"));
+
+   /* End of Edge Lambda*/
+
+    /* creating Cloudfront distrubution */
+
+    const cloudFrontDistribution = new Distribution(
+      this,
+      'MedcheckCloudFrontDistribution',
+      {
+        defaultBehavior: {
+          origin: new S3Origin(originalImageBucket),
+          viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          edgeLambdas: [
+            {
+              functionVersion: myFunc.currentVersion,
+              eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
+            }
+          ],
+        },
+        comment: `CloudFront Distribution for ${originalImageBucket}.`,
+      },
+    );
+
+
+
+    /* End of creation Cloudfront distrubution */
 
 
   }
