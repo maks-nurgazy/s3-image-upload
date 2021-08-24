@@ -1,21 +1,32 @@
-import { AnyPrincipal, Effect, ManagedPolicy, PolicyStatement, PrincipalBase, Role, ServicePrincipal } from "@aws-cdk/aws-iam";
+import {
+  AnyPrincipal,
+  Effect,
+  ManagedPolicy,
+  PolicyStatement,
+  PrincipalBase,
+  Role,
+  ServicePrincipal,
+} from "@aws-cdk/aws-iam";
 import { Bucket } from "@aws-cdk/aws-s3";
-import { Distribution, LambdaEdgeEventType, ViewerProtocolPolicy } from '@aws-cdk/aws-cloudfront';
-import { Construct, RemovalPolicy, Stack, StackProps } from '@aws-cdk/core';
-import { S3Origin } from '@aws-cdk/aws-cloudfront-origins';
+import {
+  Distribution,
+  LambdaEdgeEventType,
+  ViewerProtocolPolicy,
+} from "@aws-cdk/aws-cloudfront";
+import { Construct, RemovalPolicy, Stack, StackProps } from "@aws-cdk/core";
+import { S3Origin } from "@aws-cdk/aws-cloudfront-origins";
 import { EdgeFunction } from "@aws-cdk/aws-cloudfront/lib/experimental/edge-function";
 import * as lambda from "@aws-cdk/aws-lambda";
-import { join } from 'path';
-
+import { join } from "path";
 
 export class CustomStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-  /* Creating Bucket */
+    /* Creating Bucket */
 
-    const originalBucketName = 'medcheck-originals';
-    const mediumBucketName = 'medcheck-medium';
+    const originalBucketName = "medcheck-originals";
+    const mediumBucketName = "medcheck-medium";
 
     const originalImageBucket = new Bucket(this, "medcheck-originals", {
       bucketName: originalBucketName,
@@ -27,15 +38,19 @@ export class CustomStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    originalImageBucket.addToResourcePolicy(this.getBucketPermissions(originalBucketName));
-    medcheckMedium.addToResourcePolicy(this.getBucketPermissions(mediumBucketName));
+    originalImageBucket.addToResourcePolicy(
+      this.getBucketPermissions(originalBucketName)
+    );
+    medcheckMedium.addToResourcePolicy(
+      this.getBucketPermissions(mediumBucketName)
+    );
 
-   /* End of Bucket  creation*/
+    /* End of Bucket  creation*/
 
-   /* Creating Edge Lambda function*/
+    /* Creating Edge Lambda function*/
 
-    const myRole = new Role(this, 'My Role', {
-      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+    const myRole = new Role(this, "My Role", {
+      assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
     });
 
     /*
@@ -51,24 +66,31 @@ export class CustomStack extends Stack {
     });
   */
 
-
-   const myFunc = new lambda.Function(this, 'MyFunction', {
-    runtime: lambda.Runtime.NODEJS_14_X,
-    handler: 'index.handler',
-    code: lambda.Code.fromAsset(join(__dirname, 'lambda-handler')),
-    memorySize: 256,
-    role: myRole
+    const myFunc = new lambda.Function(this, "MyFunction", {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      handler: "index.handler",
+      code: lambda.Code.fromAsset(join(__dirname, "lambda-handler")),
+      memorySize: 256,
+      role: myRole,
     });
 
-    myRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"));
+    myRole.addManagedPolicy(
+      ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    );
 
-   /* End of Edge Lambda*/
+    // myRole.addManagedPolicy(
+    //   ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonS3FullAccess")
+    // );
+
+    /* End of Edge Lambda*/
 
     /* creating Cloudfront distrubution */
 
     const cloudFrontDistribution = new Distribution(
       this,
-      'MedcheckCloudFrontDistribution',
+      "MedcheckCloudFrontDistribution",
       {
         defaultBehavior: {
           origin: new S3Origin(originalImageBucket),
@@ -77,31 +99,22 @@ export class CustomStack extends Stack {
             {
               functionVersion: myFunc.currentVersion,
               eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
-            }
+            },
           ],
         },
         comment: `CloudFront Distribution for ${originalImageBucket}.`,
-      },
+      }
     );
 
-
-
     /* End of creation Cloudfront distrubution */
-
-
   }
 
   private getBucketPermissions(bucketName: string): PolicyStatement {
     return new PolicyStatement({
       effect: Effect.ALLOW,
       principals: [new AnyPrincipal()],
-      actions: [
-        's3:GetObject',
-        's3:GetObjectVersion',
-      ],
-      resources: [
-        `arn:aws:s3:::${bucketName}/*`,
-      ]
+      actions: ["s3:GetObject", "s3:GetObjectVersion"],
+      resources: [`arn:aws:s3:::${bucketName}/*`],
     });
   }
 }
