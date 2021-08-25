@@ -1,7 +1,6 @@
 const http = require("http");
 const https = require("https");
-
-const querystring = require("querystring");
+// const queryString = require("query-string");
 
 const AWS = require("aws-sdk");
 const S3 = new AWS.S3({
@@ -14,13 +13,14 @@ const BUCKET = "medcheck-originals";
 
 exports.handler = (event: any, context: any, callback: any) => {
   let response = event.Records[0].cf.response;
+  callback(response);
 
   console.log("Response status code :%s", response.status);
 
   //check if image is not present
   if (response.status == 404) {
     let request = event.Records[0].cf.request;
-    let params = { d: "100x100" };
+    let params = { d: "200x200" };
 
     // if there is no dimension attribute, just pass the response
     if (!params.d) {
@@ -84,6 +84,7 @@ exports.handler = (event: any, context: any, callback: any) => {
       )
       .then((buffer: any) => {
         // save the resized object to S3 bucket with appropriate object key.
+        console.log(`Image directory: ${BUCKET}`);
         S3.putObject({
           Body: buffer,
           Bucket: BUCKET,

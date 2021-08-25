@@ -1,5 +1,3 @@
-const queryString = require("querystring");
-
 // defines the allowed dimensions, default dimensions and how much variance from allowed
 // dimension is allowed.
 
@@ -20,7 +18,7 @@ exports.handler = (event: any, context: any, callback: any) => {
   const headers = request.headers;
 
   // parse the querystrings key-value pairs. In our case it would be d=100x100
-  const params = { d: "100x100" };
+  const params = { d: "200x200" };
 
   // fetch the uri of original image
   let fwdUri = request.uri;
@@ -34,8 +32,8 @@ exports.handler = (event: any, context: any, callback: any) => {
   const dimensionMatch = params.d.split("x");
 
   // set the width and height parameters
-  let width = 100;
-  let height = 100;
+  let width = dimensionMatch[0];
+  let height = dimensionMatch[1];
 
   // parse the prefix, image name and extension from the uri.
   // In our case /images/image.jpg
@@ -53,22 +51,22 @@ exports.handler = (event: any, context: any, callback: any) => {
   // range, then in our case, the dimension would be corrected to 100.
   let variancePercent = variables.variance / 100;
 
-  for (let dimension of variables.allowedDimension) {
-    let minWidth = dimension.w - dimension.w * variancePercent;
-    let maxWidth = dimension.w + dimension.w * variancePercent;
-    if (width >= minWidth && width <= maxWidth) {
-      width = dimension.w;
-      height = dimension.h;
-      matchFound = true;
-      break;
-    }
-  }
-  // if no match is found from allowed dimension with variance then set to default
-  //dimensions.
-  if (!matchFound) {
-    width = variables.defaultDimension.w;
-    height = variables.defaultDimension.h;
-  }
+  // for (let dimension of variables.allowedDimension) {
+  //   let minWidth = dimension.w - dimension.w * variancePercent;
+  //   let maxWidth = dimension.w + dimension.w * variancePercent;
+  //   if (width >= minWidth && width <= maxWidth) {
+  //     width = dimension.w;
+  //     height = dimension.h;
+  //     matchFound = true;
+  //     break;
+  //   }
+  // }
+  // // if no match is found from allowed dimension with variance then set to default
+  // //dimensions.
+  // if (!matchFound) {
+  //   width = variables.defaultDimension.w;
+  //   height = variables.defaultDimension.h;
+  // }
 
   // read the accept header to determine if webP is supported.
   let accept = headers["accept"] ? headers["accept"][0].value : "";

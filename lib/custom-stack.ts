@@ -19,7 +19,7 @@ import { EdgeFunction } from "@aws-cdk/aws-cloudfront/lib/experimental/edge-func
 import * as lambda from "@aws-cdk/aws-lambda";
 import { join } from "path";
 
-export class CustomStack extends Stack {
+export class ImageUploadStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -66,21 +66,25 @@ export class CustomStack extends Stack {
     });
   */
 
-    const viewRequestFunc = new lambda.Function(this, "ViewerRequestFunc", {
+    const viewRequestFunc = new lambda.Function(this, "ViewerRequestFunction", {
       runtime: lambda.Runtime.NODEJS_14_X,
       handler: "request.handler",
-      code: lambda.Code.fromAsset(join(__dirname, "lambda-handler")),
+      code: lambda.Code.fromAsset("request-handler"),
       memorySize: 128,
       role: myRole,
     });
 
-    const originResponseFunc = new lambda.Function(this, "OriginRequestFunct", {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      handler: "response.handler",
-      code: lambda.Code.fromAsset(join(__dirname, "lambda-handler")),
-      memorySize: 128,
-      role: myRole,
-    });
+    const originResponseFunc = new lambda.Function(
+      this,
+      "OriginRequestFunction",
+      {
+        runtime: lambda.Runtime.NODEJS_14_X,
+        handler: "response.handler",
+        code: lambda.Code.fromAsset("response-handler"),
+        memorySize: 256,
+        role: myRole,
+      }
+    );
 
     myRole.addManagedPolicy(
       ManagedPolicy.fromAwsManagedPolicyName(
