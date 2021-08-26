@@ -18,38 +18,38 @@ exports.handler = (event: any, context: any, callback: any) => {
   const headers = request.headers;
 
   // parse the querystrings key-value pairs. In our case it would be d=100x100
-  const params = { d: "200x200" };
+  // const params = { d: "200x200" };
 
   // fetch the uri of original image
   let fwdUri = request.uri;
 
   // if there is no dimension attribute, just pass the request
-  if (!params.d) {
-    callback(null, request);
-    return;
-  }
+  // if (!params.d) {
+  //   callback(null, request);
+  //   return;
+  // }
   // read the dimension parameter value = width x height and split it by 'x'
-  const dimensionMatch = params.d.split("x");
+  // const dimensionMatch = params.d.split("x");
 
   // set the width and height parameters
-  let width = dimensionMatch[0];
-  let height = dimensionMatch[1];
+  // let width = dimensionMatch[0];
+  // let height = dimensionMatch[1];
 
   // parse the prefix, image name and extension from the uri.
   // In our case /images/image.jpg
 
-  const match = fwdUri.match(/(.*)\/(.*)\.(.*)/);
+  // const match = fwdUri.match(/(.*)\/(.*)\.(.*)/);
 
-  let prefix = match[1];
-  let imageName = match[2];
-  let extension = match[3];
+  // let prefix = match[1];
+  // let imageName = match[2];
+  // let extension = match[3];
 
   // define variable to be set to true if requested dimension is allowed.
-  let matchFound = false;
+  // let matchFound = false;
 
   // calculate the acceptable variance. If image dimension is 105 and is within acceptable
   // range, then in our case, the dimension would be corrected to 100.
-  let variancePercent = variables.variance / 100;
+  // let variancePercent = variables.variance / 100;
 
   // for (let dimension of variables.allowedDimension) {
   //   let minWidth = dimension.w - dimension.w * variancePercent;
@@ -69,22 +69,23 @@ exports.handler = (event: any, context: any, callback: any) => {
   // }
 
   // read the accept header to determine if webP is supported.
-  let accept = headers["accept"] ? headers["accept"][0].value : "";
+  // let accept = headers["accept"] ? headers["accept"][0].value : "";
 
-  let url = [];
-  // build the new uri to be forwarded upstream
-  url.push(prefix);
-  url.push(width + "x" + height);
+  // let url = [];
+  // // build the new uri to be forwarded upstream
+  // // url.push(prefix);
+  // // url.push(width + "x" + height);
 
-  // check support for webp
-  if (accept.includes(variables.webpExtension)) {
-    url.push(variables.webpExtension);
-  } else {
-    url.push(extension);
-  }
-  url.push(imageName + "." + extension);
+  // // check support for webp
+  // if (accept.includes(variables.webpExtension)) {
+  //   url.push(variables.webpExtension);
+  // } else {
+  //   // url.push(extension);
+  // }
+  // url.push(imageName + "." + extension);
 
-  fwdUri = url.join("/");
+  // fwdUri = url.join("/");
+  fwdUri = "/lowimage.png";
 
   // final modified url is of format /images/200x200/webp/image.jpg
   request.uri = fwdUri;
