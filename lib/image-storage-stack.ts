@@ -1,3 +1,4 @@
+/* External dependencies */
 import {
   AnyPrincipal,
   Effect,
@@ -12,47 +13,49 @@ import {
   LambdaEdgeEventType,
   ViewerProtocolPolicy,
 } from "@aws-cdk/aws-cloudfront";
-import { Construct, RemovalPolicy, Stack, StackProps } from "@aws-cdk/core";
+import { Construct, RemovalPolicy, Stack } from "@aws-cdk/core";
 import { S3Origin } from "@aws-cdk/aws-cloudfront-origins";
 import * as lambda from "@aws-cdk/aws-lambda";
 import { join } from "path";
 
+/* Local dependencies */
+import { ImageStorageProps } from "./stack-props";
+
 export class ImageStorageStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
-    super(scope, id, props);
+  constructor(scope: Construct, id: string, props: ImageStorageProps) {
+    super(scope, id);
+
+    const { mainImagesBucketName, thumbnailImagesBucketName } = props;
 
     /* Creating Bucket */
-    const MAIN_IMAGES_BUCKET_NAME = "main-images-bucket";
-    const THUMBNAIL_IMAGES_BUCKET_NAME = "thumbnail-images-bucket";
-
-    const mainImagesBucket = new Bucket(this, MAIN_IMAGES_BUCKET_NAME, {
-      bucketName: MAIN_IMAGES_BUCKET_NAME,
+    const mainImagesBucket = new Bucket(this, mainImagesBucketName, {
+      bucketName: mainImagesBucketName,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    const thumbnailImagesBucket = new Bucket(
-      this,
-      THUMBNAIL_IMAGES_BUCKET_NAME,
-      {
-        bucketName: THUMBNAIL_IMAGES_BUCKET_NAME,
-        removalPolicy: RemovalPolicy.DESTROY,
-      }
-    );
+    const thumbnailImagesBucket = new Bucket(this, thumbnailImagesBucketName, {
+      bucketName: thumbnailImagesBucketName,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
 
     mainImagesBucket.addToResourcePolicy(
-      this.getBucketPermissions(MAIN_IMAGES_BUCKET_NAME)
+      this.getBucketPermissions(mainImagesBucketName)
     );
     thumbnailImagesBucket.addToResourcePolicy(
-      this.getBucketPermissions(THUMBNAIL_IMAGES_BUCKET_NAME)
+      this.getBucketPermissions(thumbnailImagesBucketName)
     );
-
     /* End of Bucket  creation*/
 
-    /* Creating Edge Lambda function*/
-
+    /* Creating Lambda function*/
     const myRole = new Role(this, "My Role", {
       assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
     });
+
+    myRole.addManagedPolicy(
+      ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    );
 
     const viewRequestFunc = new lambda.Function(this, "ViewerRequestFunction", {
       runtime: lambda.Runtime.NODEJS_14_X,
@@ -73,44 +76,27 @@ export class ImageStorageStack extends Stack {
         role: myRole,
       }
     );
-
-    myRole.addManagedPolicy(
-      ManagedPolicy.fromAwsManagedPolicyName(
-        "service-role/AWSLambdaBasicExecutionRole"
-      )
-    );
-
-    // myRole.addManagedPolicy(
-    //   ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonS3FullAccess")
-    // );
-
     /* End of Edge Lambda*/
 
     /* creating Cloudfront distrubution */
+    new Distribution(this, "MedcheckCloudFrontDistribution", {
+      defaultBehavior: {
+        origin: new S3Origin(mainImagesBucket),
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        edgeLambdas: [
+          {
+            functionVersion: viewRequestFunc.currentVersion,
+            eventType: LambdaEdgeEventType.VIEWER_REQUEST,
+          },
+          {
+            functionVersion: originResponseFunc.currentVersion,
+            eventType: LambdaEdgeEventType.ORIGIN_RESPONSE,
+          },
+        ],
+      },
 
-    const cloudFrontDistribution = new Distribution(
-      this,
-      "MedcheckCloudFrontDistribution",
-      {
-        defaultBehavior: {
-          origin: new S3Origin(originalImageBucket),
-          viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-          edgeLambdas: [
-            {
-              functionVersion: viewRequestFunc.currentVersion,
-              eventType: LambdaEdgeEventType.VIEWER_REQUEST,
-            },
-            {
-              functionVersion: originResponseFunc.currentVersion,
-              eventType: LambdaEdgeEventType.ORIGIN_RESPONSE,
-            },
-          ],
-        },
-
-        comment: `CloudFront Distribution for ${originalImageBucket}.`,
-      }
-    );
-
+      comment: `CloudFront Distribution for ${mainImagesBucketName}.`,
+    });
     /* End of creation Cloudfront distrubution */
   }
 
@@ -118,7 +104,7 @@ export class ImageStorageStack extends Stack {
     return new PolicyStatement({
       effect: Effect.ALLOW,
       principals: [new AnyPrincipal()],
-      actions: ["s3:GetObject", "s3:GetObjectVersion"],
+      actions: ["s3:GetObject", "s3:PutObject", "s3:GetObjectVersion"],
       resources: [`arn:aws:s3:::${bucketName}/*`],
     });
   }
