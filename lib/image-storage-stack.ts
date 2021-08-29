@@ -14,34 +14,36 @@ import {
 } from "@aws-cdk/aws-cloudfront";
 import { Construct, RemovalPolicy, Stack, StackProps } from "@aws-cdk/core";
 import { S3Origin } from "@aws-cdk/aws-cloudfront-origins";
-import { EdgeFunction } from "@aws-cdk/aws-cloudfront/lib/experimental/edge-function";
 import * as lambda from "@aws-cdk/aws-lambda";
 import { join } from "path";
 
-export class ImageUploadStack extends Stack {
+export class ImageStorageStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
     /* Creating Bucket */
+    const MAIN_IMAGES_BUCKET_NAME = "main-images-bucket";
+    const THUMBNAIL_IMAGES_BUCKET_NAME = "thumbnail-images-bucket";
 
-    const originalBucketName = "medcheck-originals";
-    const thumbnailBucketName = "medcheck-thumbnails";
-
-    const originalImageBucket = new Bucket(this, "medcheck-originals", {
-      bucketName: originalBucketName,
+    const mainImagesBucket = new Bucket(this, MAIN_IMAGES_BUCKET_NAME, {
+      bucketName: MAIN_IMAGES_BUCKET_NAME,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    const medcheckMedium = new Bucket(this, "medcheck-thumbnails", {
-      bucketName: thumbnailBucketName,
-      removalPolicy: RemovalPolicy.DESTROY,
-    });
-
-    originalImageBucket.addToResourcePolicy(
-      this.getBucketPermissions(originalBucketName)
+    const thumbnailImagesBucket = new Bucket(
+      this,
+      THUMBNAIL_IMAGES_BUCKET_NAME,
+      {
+        bucketName: THUMBNAIL_IMAGES_BUCKET_NAME,
+        removalPolicy: RemovalPolicy.DESTROY,
+      }
     );
-    medcheckMedium.addToResourcePolicy(
-      this.getBucketPermissions(thumbnailBucketName)
+
+    mainImagesBucket.addToResourcePolicy(
+      this.getBucketPermissions(MAIN_IMAGES_BUCKET_NAME)
+    );
+    thumbnailImagesBucket.addToResourcePolicy(
+      this.getBucketPermissions(THUMBNAIL_IMAGES_BUCKET_NAME)
     );
 
     /* End of Bucket  creation*/
@@ -52,23 +54,10 @@ export class ImageUploadStack extends Stack {
       assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
     });
 
-    /*
-    f the stack is in us-east-1, a "normal" lambda.Function can be used instead of an EdgeFunction.
-    If you want to use EdgeFunction then uncomment below line and comment myFunc lambda function
-
-
-    const myFunc = new cloudfront.experimental.EdgeFunction(this, 'MyFunction', {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, 'lambda-handler')),
-      role: myRole
-    });
-  */
-
     const viewRequestFunc = new lambda.Function(this, "ViewerRequestFunction", {
       runtime: lambda.Runtime.NODEJS_14_X,
       handler: "request.handler",
-      code: lambda.Code.fromAsset("request-handler"),
+      code: lambda.Code.fromAsset("viewer-request"),
       memorySize: 128,
       role: myRole,
     });
@@ -79,7 +68,7 @@ export class ImageUploadStack extends Stack {
       {
         runtime: lambda.Runtime.NODEJS_14_X,
         handler: "response.handler",
-        code: lambda.Code.fromAsset("response-handler"),
+        code: lambda.Code.fromAsset("origin-response"),
         memorySize: 256,
         role: myRole,
       }
@@ -117,6 +106,7 @@ export class ImageUploadStack extends Stack {
             },
           ],
         },
+
         comment: `CloudFront Distribution for ${originalImageBucket}.`,
       }
     );
