@@ -19,10 +19,11 @@ import * as lambda from "@aws-cdk/aws-lambda";
 
 /* Local dependencies */
 import { ImageStorageProps } from "./stack-props";
+import { env } from "process";
 
 export class ImageStorageStack extends Stack {
   constructor(scope: Construct, id: string, props: ImageStorageProps) {
-    super(scope, id);
+    super(scope, id, { env: { account: "680553899128", region: "us-east-1" } });
 
     const { mainImagesBucketName, thumbnailImagesBucketName, projectName } =
       props;
@@ -67,9 +68,6 @@ export class ImageStorageStack extends Stack {
         code: lambda.Code.fromAsset("viewer-request"),
         memorySize: 128,
         role: myRole,
-        environment: {
-          region: "us-east-1",
-        },
       }
     );
 
@@ -82,9 +80,6 @@ export class ImageStorageStack extends Stack {
         code: lambda.Code.fromAsset("origin-response"),
         memorySize: 256,
         role: myRole,
-        environment: {
-          region: "us-east-1",
-        },
       }
     );
     /* End of Edge Lambda*/
