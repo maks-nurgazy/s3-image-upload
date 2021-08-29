@@ -16,7 +16,6 @@ import {
 import { Construct, RemovalPolicy, Stack } from "@aws-cdk/core";
 import { S3Origin } from "@aws-cdk/aws-cloudfront-origins";
 import * as lambda from "@aws-cdk/aws-lambda";
-import { join } from "path";
 
 /* Local dependencies */
 import { ImageStorageProps } from "./stack-props";
@@ -25,7 +24,8 @@ export class ImageStorageStack extends Stack {
   constructor(scope: Construct, id: string, props: ImageStorageProps) {
     super(scope, id);
 
-    const { mainImagesBucketName, thumbnailImagesBucketName } = props;
+    const { mainImagesBucketName, thumbnailImagesBucketName, projectName } =
+      props;
 
     /* Creating Bucket */
     const mainImagesBucket = new Bucket(this, mainImagesBucketName, {
@@ -41,13 +41,14 @@ export class ImageStorageStack extends Stack {
     mainImagesBucket.addToResourcePolicy(
       this.getBucketPermissions(mainImagesBucketName)
     );
+
     thumbnailImagesBucket.addToResourcePolicy(
       this.getBucketPermissions(thumbnailImagesBucketName)
     );
     /* End of Bucket  creation*/
 
     /* Creating Lambda function*/
-    const myRole = new Role(this, "My Role", {
+    const myRole = new Role(this, `${projectName}LambdaRole`, {
       assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
     });
 
@@ -57,46 +58,55 @@ export class ImageStorageStack extends Stack {
       )
     );
 
-    const viewRequestFunc = new lambda.Function(this, "ViewerRequestFunction", {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      handler: "request.handler",
-      code: lambda.Code.fromAsset("viewer-request"),
-      memorySize: 128,
-      role: myRole,
-    });
-
-    const originResponseFunc = new lambda.Function(
+    const viewerRequestLambda = new lambda.Function(
       this,
-      "OriginRequestFunction",
+      `${projectName}ViewerRequestLambda`,
       {
         runtime: lambda.Runtime.NODEJS_14_X,
-        handler: "response.handler",
+        handler: "viewer-request.handler",
+        code: lambda.Code.fromAsset("viewer-request"),
+        memorySize: 128,
+        role: myRole,
+        environment: {
+          region: "us-east-1",
+        },
+      }
+    );
+
+    const originResponseLambda = new lambda.Function(
+      this,
+      `${projectName}OriginResponseLambda`,
+      {
+        runtime: lambda.Runtime.NODEJS_14_X,
+        handler: "origin-response.handler",
         code: lambda.Code.fromAsset("origin-response"),
         memorySize: 256,
         role: myRole,
+        environment: {
+          region: "us-east-1",
+        },
       }
     );
     /* End of Edge Lambda*/
 
     /* creating Cloudfront distrubution */
-    new Distribution(this, "MedcheckCloudFrontDistribution", {
-      defaultBehavior: {
-        origin: new S3Origin(mainImagesBucket),
-        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        edgeLambdas: [
-          {
-            functionVersion: viewRequestFunc.currentVersion,
-            eventType: LambdaEdgeEventType.VIEWER_REQUEST,
-          },
-          {
-            functionVersion: originResponseFunc.currentVersion,
-            eventType: LambdaEdgeEventType.ORIGIN_RESPONSE,
-          },
-        ],
-      },
-
-      comment: `CloudFront Distribution for ${mainImagesBucketName}.`,
-    });
+    // new Distribution(this, `${projectName}ImagesCloudFrontDistribution`, {
+    //   defaultBehavior: {
+    //     origin: new S3Origin(mainImagesBucket),
+    //     viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    //     edgeLambdas: [
+    //       {
+    //         functionVersion: viewerRequestLambda.currentVersion,
+    //         eventType: LambdaEdgeEventType.VIEWER_REQUEST,
+    //       },
+    //       {
+    //         functionVersion: originResponseLambda.currentVersion,
+    //         eventType: LambdaEdgeEventType.ORIGIN_RESPONSE,
+    //       },
+    //     ],
+    //   },
+    //   comment: `CloudFront Distribution for ${projectName}.`,
+    // });
     /* End of creation Cloudfront distrubution */
   }
 

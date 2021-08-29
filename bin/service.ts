@@ -11,6 +11,7 @@ const THUMBNAIL_IMAGES_BUCKET_NAME = "thumbnail-images-bucket";
 new ImageStorageStack(app, "ImageStorageStack", {
   mainImagesBucketName: MAIN_IMAGES_BUCKET_NAME,
   thumbnailImagesBucketName: THUMBNAIL_IMAGES_BUCKET_NAME,
+  projectName: "BTS",
 });
 
 // env: { account: "680553899128", region: "us-east-1" },
