@@ -7,8 +7,8 @@ import { ImageStorageStack } from "../lib/image-storage-stack";
 
 const app = new cdk.App();
 
-const MAIN_IMAGES_BUCKET_NAME = "main-images-bucket";
-const THUMBNAIL_IMAGES_BUCKET_NAME = "thumbnail-images-bucket";
+const MAIN_IMAGES_BUCKET_NAME = "bts-main-images-bucket";
+const THUMBNAIL_IMAGES_BUCKET_NAME = "bts-thumbnail-images-bucket";
 
 new ImageStorageStack(app, "ImageStorageStack", {
   mainImagesBucketName: MAIN_IMAGES_BUCKET_NAME,

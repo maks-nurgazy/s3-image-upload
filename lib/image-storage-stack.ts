@@ -23,7 +23,7 @@ import { env } from "process";
 
 export class ImageStorageStack extends Stack {
   constructor(scope: Construct, id: string, props: ImageStorageProps) {
-    super(scope, id, { env: { account: "680553899128", region: "us-east-1" } });
+    super(scope, id, { env: { region: "us-east-1" } });
 
     const { mainImagesBucketName, thumbnailImagesBucketName, projectName } =
       props;
@@ -87,7 +87,7 @@ export class ImageStorageStack extends Stack {
     /* creating Cloudfront distrubution */
     // new Distribution(this, `${projectName}ImagesCloudFrontDistribution`, {
     //   defaultBehavior: {
-    //     origin: new S3Origin(mainImagesBucket),
+    //     origin: new S3Origin(thumbnailImagesBucket),
     //     viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     //     edgeLambdas: [
     //       {
