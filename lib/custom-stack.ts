@@ -3,7 +3,6 @@ import {
   Effect,
   ManagedPolicy,
   PolicyStatement,
-  PrincipalBase,
   Role,
   ServicePrincipal,
 } from "@aws-cdk/aws-iam";
@@ -26,15 +25,15 @@ export class ImageUploadStack extends Stack {
     /* Creating Bucket */
 
     const originalBucketName = "medcheck-originals";
-    const mediumBucketName = "medcheck-medium";
+    const thumbnailBucketName = "medcheck-thumbnails";
 
     const originalImageBucket = new Bucket(this, "medcheck-originals", {
       bucketName: originalBucketName,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    const medcheckMedium = new Bucket(this, "medcheck-medium", {
-      bucketName: mediumBucketName,
+    const medcheckMedium = new Bucket(this, "medcheck-thumbnails", {
+      bucketName: thumbnailBucketName,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
@@ -42,7 +41,7 @@ export class ImageUploadStack extends Stack {
       this.getBucketPermissions(originalBucketName)
     );
     medcheckMedium.addToResourcePolicy(
-      this.getBucketPermissions(mediumBucketName)
+      this.getBucketPermissions(thumbnailBucketName)
     );
 
     /* End of Bucket  creation*/

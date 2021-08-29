@@ -18,7 +18,7 @@ exports.handler = (event: any, context: any, callback: any) => {
   const headers = request.headers;
 
   // parse the querystrings key-value pairs. In our case it would be d=100x100
-  // const params = { d: "200x200" };
+  const params = { d: "200x200" };
 
   // fetch the uri of original image
   let fwdUri = request.uri;

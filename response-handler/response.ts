@@ -20,9 +20,6 @@ exports.handler = (event: any, context: any, callback: any) => {
   if (response.status == 404) {
     let request = event.Records[0].cf.request;
 
-    console.log(request.querystring);
-    console.log(request.uri);
-
     let params = { d: "300x300" };
 
     // if there is no dimension attribute, just pass the response
@@ -43,37 +40,37 @@ exports.handler = (event: any, context: any, callback: any) => {
 
     // // parse the prefix, width, height and image name
     // // Ex: key=images/200x200/webp/image.jpg
-    // let prefix,
-    //   originalKey,
-    //   match,
-    //   width: any,
-    //   height: any,
-    //   requiredFormat: any,
-    //   imageName;
-    // let startIndex;
+    let prefix,
+      originalKey,
+      match,
+      width: any,
+      height: any,
+      requiredFormat: any,
+      imageName;
+    let startIndex;
 
-    // try {
-    //   match = key.match(/(.*)\/(\d+)x(\d+)\/(.*)\/(.*)/);
-    //   prefix = match[1];
-    //   width = parseInt(match[2], 10);
-    //   height = parseInt(match[3], 10);
+    try {
+      match = key.match(/(.*)\/(\d+)x(\d+)\/(.*)\/(.*)/);
+      prefix = match[1];
+      width = parseInt(match[2], 10);
+      height = parseInt(match[3], 10);
 
-    //   // correction for jpg required for 'Sharp'
-    //   requiredFormat = match[4] == "jpg" ? "jpeg" : match[4];
-    //   imageName = match[5];
-    //   originalKey = prefix + "/" + imageName;
-    // } catch (err) {
-    //   // no prefix exist for image..
-    //   console.log("no prefix present..");
-    //   match = key.match(/(\d+)x(\d+)\/(.*)\/(.*)/);
-    //   width = parseInt(match[1], 10);
-    //   height = parseInt(match[2], 10);
+      // correction for jpg required for 'Sharp'
+      requiredFormat = match[4] == "jpg" ? "jpeg" : match[4];
+      imageName = match[5];
+      originalKey = prefix + "/" + imageName;
+    } catch (err) {
+      // no prefix exist for image..
+      console.log("no prefix present..");
+      match = key.match(/(\d+)x(\d+)\/(.*)\/(.*)/);
+      width = parseInt(match[1], 10);
+      height = parseInt(match[2], 10);
 
-    //   // correction for jpg required for 'Sharp'
-    //   requiredFormat = match[3] == "jpg" ? "jpeg" : match[3];
-    //   imageName = match[4];
-    //   originalKey = imageName;
-    // }
+      // correction for jpg required for 'Sharp'
+      requiredFormat = match[3] == "jpg" ? "jpeg" : match[3];
+      imageName = match[4];
+      originalKey = imageName;
+    }
 
     // get the source image file
     S3.getObject({ Bucket: BUCKET, Key: "lowimage.png" })
