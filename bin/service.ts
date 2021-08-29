@@ -1,6 +1,8 @@
-#!/usr/bin/env node
+/* External dependencies */
 import "source-map-support/register";
 import * as cdk from "@aws-cdk/core";
+
+/* Local dependencies */
 import { ImageStorageStack } from "../lib/image-storage-stack";
 
 const app = new cdk.App();
@@ -13,5 +15,3 @@ new ImageStorageStack(app, "ImageStorageStack", {
   thumbnailImagesBucketName: THUMBNAIL_IMAGES_BUCKET_NAME,
   projectName: "BTS",
 });
-
-// env: { account: "680553899128", region: "us-east-1" },
