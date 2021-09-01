@@ -16,9 +16,6 @@ const s3Client = new S3({
 
 exports.handler = async (event: CloudFrontResponseEvent) => {
   let response: CloudFrontResultResponse = event.Records[0].cf.response;
-  console.log(response);
-  console.log("request in origin-response");
-  console.log(event.Records[0].cf.request);
 
   return response;
 };
