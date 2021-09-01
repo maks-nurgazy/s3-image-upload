@@ -1,13 +1,24 @@
-import { CloudFrontResponseEvent, CloudFrontResponse } from "aws-lambda";
+import {
+  CloudFrontResponseEvent,
+  CloudFrontResponse,
+  CloudFrontRequest,
+  CloudFrontResultResponse,
+} from "aws-lambda";
+import { S3 } from "aws-sdk";
+import { GetObjectOutput } from "aws-sdk/clients/s3";
+import { ParsedUrlQuery, parse } from "querystring";
 
-exports.handler = (event: CloudFrontResponseEvent) => {
-  let response: CloudFrontResponse = event.Records[0].cf.response;
+// const Sharp = require("sharp");
 
-  if (response.status == "404") {
-    console.log("No image found");
-  } else {
-    return response;
-  }
+const s3Client = new S3({
+  signatureVersion: "v4",
+});
+
+exports.handler = async (event: CloudFrontResponseEvent) => {
+  let response: CloudFrontResultResponse = event.Records[0].cf.response;
+  console.log(response);
+  console.log("request in origin-response");
+  console.log(event.Records[0].cf.request);
 
   return response;
 };

@@ -32,6 +32,8 @@ export class ImageStorageStack extends Stack {
     const mainImagesBucket = new Bucket(this, mainImagesBucketName, {
       bucketName: mainImagesBucketName,
       removalPolicy: RemovalPolicy.DESTROY,
+      
+      
     });
 
     const thumbnailImagesBucket = new Bucket(this, thumbnailImagesBucketName, {
@@ -85,23 +87,24 @@ export class ImageStorageStack extends Stack {
     /* End of Edge Lambda*/
 
     /* creating Cloudfront distrubution */
-    // new Distribution(this, `${projectName}ImagesCloudFrontDistribution`, {
-    //   defaultBehavior: {
-    //     origin: new S3Origin(thumbnailImagesBucket),
-    //     viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-    //     edgeLambdas: [
-    //       {
-    //         functionVersion: viewerRequestLambda.currentVersion,
-    //         eventType: LambdaEdgeEventType.VIEWER_REQUEST,
-    //       },
-    //       {
-    //         functionVersion: originResponseLambda.currentVersion,
-    //         eventType: LambdaEdgeEventType.ORIGIN_RESPONSE,
-    //       },
-    //     ],
-    //   },
-    //   comment: `CloudFront Distribution for ${projectName}.`,
-    // });
+    new Distribution(this, `${projectName}ImagesCloudFrontDistribution`, {
+      enableLogging: true,
+      defaultBehavior: {
+        origin: new S3Origin(thumbnailImagesBucket),
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        edgeLambdas: [
+          {
+            functionVersion: viewerRequestLambda.currentVersion,
+            eventType: LambdaEdgeEventType.VIEWER_REQUEST,
+          },
+          {
+            functionVersion: originResponseLambda.currentVersion,
+            eventType: LambdaEdgeEventType.ORIGIN_RESPONSE,
+          },
+        ],
+      },
+      comment: `CloudFront Distribution for ${projectName}.`,
+    });
     /* End of creation Cloudfront distrubution */
   }
 
