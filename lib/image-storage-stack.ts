@@ -32,8 +32,6 @@ export class ImageStorageStack extends Stack {
     const mainImagesBucket = new Bucket(this, mainImagesBucketName, {
       bucketName: mainImagesBucketName,
       removalPolicy: RemovalPolicy.DESTROY,
-      
-      
     });
 
     const thumbnailImagesBucket = new Bucket(this, thumbnailImagesBucketName, {
