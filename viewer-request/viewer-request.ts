@@ -16,8 +16,8 @@ const variables = {
   variance: 20,
 };
 
-exports.handler = (event: CloudFrontRequestEvent) => {
-  const request: CloudFrontRequest = event.Records[0].cf.request;
+exports.handler = (event: any) => {
+  const request = event.Records[0].cf.request;
   console.log(request);
 
   return request;
