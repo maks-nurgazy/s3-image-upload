@@ -11,6 +11,7 @@ import { Bucket } from "@aws-cdk/aws-s3";
 import {
   Distribution,
   LambdaEdgeEventType,
+  PriceClass,
   ViewerProtocolPolicy,
 } from "@aws-cdk/aws-cloudfront";
 import { Construct, RemovalPolicy, Stack } from "@aws-cdk/core";
@@ -87,6 +88,7 @@ export class ImageStorageStack extends Stack {
     /* creating Cloudfront distrubution */
     new Distribution(this, `${projectName}ImagesCloudFrontDistribution`, {
       enableLogging: true,
+      priceClass: PriceClass.PRICE_CLASS_100,
       defaultBehavior: {
         origin: new S3Origin(thumbnailImagesBucket),
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
