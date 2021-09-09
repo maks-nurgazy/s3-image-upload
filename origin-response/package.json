@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "query-string": "^7.0.1",
     "sharp": "^0.29.0"
   }
 }

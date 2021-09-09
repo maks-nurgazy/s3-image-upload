@@ -97,6 +97,10 @@ export class ImageStorageStack extends Stack {
             functionVersion: viewerRequestLambda.currentVersion,
             eventType: LambdaEdgeEventType.VIEWER_REQUEST,
           },
+          {
+            functionVersion: originResponseLambda.currentVersion,
+            eventType: LambdaEdgeEventType.ORIGIN_RESPONSE,
+          },
         ],
       },
       comment: `CloudFront Distribution for ${projectName}.`,
