@@ -52,7 +52,7 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
         .toBuffer();
 
       const putParams: PutObjectRequest = {
-        Body: resizedImage,
+        Body: resizedImage.Body,
         Bucket: "bts-thumbnail-images-bucket",
         ContentType: `image/${extension}`,
         CacheControl: "max-age=31536000",
@@ -63,7 +63,7 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
       s3Client.putObject(putParams).promise();
 
       response.status = "200";
-      response.body = resizedImage.toString("base64");
+      response.body = resizedImage.Body?.toString("base64");
       response.bodyEncoding = "base64";
       const headers: CloudFrontHeaders = {
         "content-type": [{ key: "Content-Type", value: `image/${extension}` }],
