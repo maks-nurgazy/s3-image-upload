@@ -37,7 +37,7 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
     const width: number = parseInt(match[2]);
     const height: number = parseInt(match[3]);
     const imageName: string = match[4];
-    const extension: string = match[5];
+    const extension: string = match[5] == "jpg" ? "jpeg" : match[5];
 
     const originalKey = `${prefix}/${imageName}.${extension}`;
 
