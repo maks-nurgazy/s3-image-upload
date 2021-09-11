@@ -11,9 +11,7 @@ import { ParsedUrlQuery, parse } from "querystring";
 
 const Sharp = require("sharp");
 
-const s3Client = new S3({
-  signatureVersion: "v4",
-});
+const s3Client = new S3();
 
 exports.handler = async (event: CloudFrontResponseEvent) => {
   let response: CloudFrontResultResponse = event.Records[0].cf.response;
@@ -37,13 +35,22 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
     const width: number = parseInt(match[2]);
     const height: number = parseInt(match[3]);
     const imageName: string = match[4];
-    const extension: string = match[5];
+    const extension: string = match[5] == "jpg" ? "jpeg" : match[5];
 
+    console.log(prefix);
+    console.log(width);
+    console.log(height);
+    console.log(imageName);
+    console.log(extension);
     const originalKey = `${prefix}/${imageName}.${extension}`;
-    const BUCKET = "bts-main-images-bucket";
+    console.log(originalKey);
+    const ORIGINAL_BUCKET = "bts-main-images-bucket";
+    const STORE_BUCKET = "bts-thumbnail-images-bucket";
+    const storeKey = `images/${width}x${height}/${imageName}.${extension}`;
+    console.log(storeKey);
 
     s3Client
-      .getObject({ Bucket: BUCKET, Key: originalKey })
+      .getObject({ Bucket: ORIGINAL_BUCKET, Key: originalKey })
       .promise()
       // perform the resize operation
       .then((x) => (console.log("after getObject s3:", x), x))
@@ -55,10 +62,10 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
         s3Client
           .putObject({
             Body: buffer,
-            Bucket: BUCKET,
+            Bucket: STORE_BUCKET,
             ContentType: "image/" + extension,
             CacheControl: "max-age=31536000",
-            Key: `images/${width}x${height}/${imageName}.${extension}`,
+            Key: storeKey,
             StorageClass: "STANDARD",
           })
           .promise()
