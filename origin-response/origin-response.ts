@@ -9,7 +9,7 @@ import { S3 } from "aws-sdk";
 import { GetObjectOutput, PutObjectRequest } from "aws-sdk/clients/s3";
 import { ParsedUrlQuery, parse } from "querystring";
 
-const sharp = require("sharp");
+const Sharp = require("sharp");
 
 const s3Client = new S3({
   signatureVersion: "v4",
@@ -40,40 +40,49 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
     const extension: string = match[5];
 
     const originalKey = `${prefix}/${imageName}.${extension}`;
+    const BUCKET = "bts-main-images-bucket";
 
-    try {
-      const originalImage = await s3Client
-        .getObject({ Bucket: "bts-main-images-bucket", Key: originalKey })
-        .promise();
+    s3Client
+      .getObject({ Bucket: BUCKET, Key: originalKey })
+      .promise()
+      // perform the resize operation
+      .then((x) => (console.log("after getObject s3:", x), x))
+      .then((data) =>
+        Sharp(data.Body).resize(width, height).toFormat(extension).toBuffer()
+      )
+      .then((buffer) => {
+        // save the resized object to S3 bucket with appropriate object key.
+        s3Client
+          .putObject({
+            Body: buffer,
+            Bucket: BUCKET,
+            ContentType: "image/" + extension,
+            CacheControl: "max-age=31536000",
+            Key: `images/${width}x${height}/${imageName}.${extension}`,
+            StorageClass: "STANDARD",
+          })
+          .promise()
+          .then((x) => (console.log("after putObject", x), x))
+          // even if there is exception in saving the object we send back the generated
+          // image back to viewer below
+          .catch(() => {
+            console.log("Exception while writing resized image to bucket");
+          });
 
-      const resizedImage = await sharp(originalImage.Body)
-        .resize(width, height)
-        .toFormat(extension)
-        .toBuffer();
-
-      const putParams: PutObjectRequest = {
-        Body: resizedImage.Body,
-        Bucket: "bts-thumbnail-images-bucket",
-        ContentType: `image/${extension}`,
-        CacheControl: "max-age=31536000",
-        Key: `images/${width}x${height}/${imageName}.${extension}`,
-        StorageClass: "STANDARD",
-      };
-
-      s3Client.putObject(putParams).promise();
-
-      response.status = "200";
-      response.body = resizedImage.Body?.toString("base64");
-      response.bodyEncoding = "base64";
-      const headers: CloudFrontHeaders = {
-        "content-type": [{ key: "Content-Type", value: `image/${extension}` }],
-      };
-      response.headers = headers;
-
-      return response;
-    } catch (e: any) {
-      console.log(e);
-    }
+        // generate a binary response with resized image
+        response.status = "200";
+        response.body = buffer.toString("base64");
+        response.bodyEncoding = "base64";
+        response.headers = {
+          "content-type": [
+            { key: "Content-Type", value: "image/" + extension },
+          ],
+        };
+        return response;
+      })
+      .catch((err) => {
+        console.log("Exception while reading source image :%j", err);
+      });
   }
 
   return response;
