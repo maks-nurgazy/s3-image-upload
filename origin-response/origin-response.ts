@@ -17,10 +17,10 @@ const s3Client = new S3({
 
 exports.handler = async (event: CloudFrontResponseEvent) => {
   let response: CloudFrontResultResponse = event.Records[0].cf.response;
-
-  console.log(JSON.stringify(response));
+  console.log("origin response begin: " + JSON.stringify(response));
 
   if (response.status == "403" || response.status == "404") {
+    console.log("IF STatement triggered");
     let request: CloudFrontRequest = event.Records[0].cf.request;
     const imageUri: string = request.uri.substring(1);
 
@@ -46,10 +46,16 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
         .getObject({ Bucket: "bts-main-images-bucket", Key: originalKey })
         .promise();
 
+      console.log("image meta data: " + originalImage.Metadata);
+
       const resizedImage = await sharp(originalImage.Body)
         .resize(width, height)
         .toFormat(extension)
         .toBuffer();
+
+      console.log("Image resized");
+
+      console.log(JSON.stringify(resizedImage));
 
       const putParams: PutObjectRequest = {
         Body: resizedImage,
@@ -60,15 +66,9 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
         StorageClass: "STANDARD",
       };
 
-      s3Client.putObject(putParams).promise();
+      console.log("after putting images");
 
-      response.status = "200";
-      response.body = resizedImage.toString("base64");
-      response.bodyEncoding = "base64";
-      const headers: CloudFrontHeaders = {
-        "content-type": [{ key: "Content-Type", value: `image/${extension}` }],
-      };
-      response.headers = headers;
+      await s3Client.putObject(putParams).promise();
 
       return response;
     } catch (e: any) {
