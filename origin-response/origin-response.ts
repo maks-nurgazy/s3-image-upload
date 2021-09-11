@@ -70,8 +70,11 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
 
       await s3Client.putObject(putParams).promise();
 
-      response.body = resizedImage.toString("base64");
-      response.bodyEncoding = "base64";
+      // NOT WORKING CODE...
+      var headers = response.headers;
+      console.log(headers);
+
+      response.body = resizedImage;
 
       return response;
     } catch (e: any) {
