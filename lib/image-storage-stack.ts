@@ -60,6 +60,14 @@ export class ImageStorageStack extends Stack {
       )
     );
 
+    myRole.addToPolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ["s3:GetObject", "s3:PutObject"],
+        resources: ["arn:aws:s3:::*"],
+      })
+    );
+
     const viewerRequestLambda = new lambda.Function(
       this,
       `${projectName}ViewerRequestLambda`,

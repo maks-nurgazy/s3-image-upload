@@ -17,7 +17,6 @@ const s3Client = new S3({
 
 exports.handler = async (event: CloudFrontResponseEvent) => {
   let response: CloudFrontResultResponse = event.Records[0].cf.response;
-  console.log("origin response begin: " + JSON.stringify(response));
 
   if (response.status == "403" || response.status == "404") {
     console.log("IF STatement triggered");
@@ -42,23 +41,31 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
     const originalKey = `${prefix}/${imageName}.${extension}`;
 
     try {
+      console.log("Before getting s3 image...");
+
       const originalImage = await s3Client
         .getObject({ Bucket: "bts-main-images-bucket", Key: originalKey })
         .promise();
 
       console.log("image meta data: " + originalImage.Metadata);
 
+      console.log("before image resizing");
+
       const resizedImage = await sharp(originalImage.Body)
         .resize(width, height)
-        .toFormat(extension)
-        .toBuffer();
+        .toFormat(extension);
 
-      console.log("Image resized");
-
+      console.log("printing resizedImage");
       console.log(JSON.stringify(resizedImage));
 
+      console.log("before image BUFFERING");
+
+      const bufferedImage = await resizedImage.toBuffer();
+
+      console.log("Before image PUTOBJECT");
+
       const putParams: PutObjectRequest = {
-        Body: resizedImage,
+        Body: bufferedImage,
         Bucket: "bts-thumbnail-images-bucket",
         ContentType: `image/${extension}`,
         CacheControl: "max-age=31536000",
@@ -74,13 +81,19 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
       var headers = response.headers;
       console.log(headers);
 
-      response.body = resizedImage;
+      response.status = "200";
+      response.body = bufferedImage.toString("base64");
+      response.bodyEncoding = "base64";
+
+      console.log("Response is ready");
 
       return response;
     } catch (e: any) {
+      console.log("EROROR occuress...");
       console.log(e);
     }
   }
 
+  console.log("outer return ishtep ketti ...................................");
   return response;
 };
