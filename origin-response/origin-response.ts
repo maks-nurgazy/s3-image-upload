@@ -82,9 +82,13 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
       console.log(headers);
 
       response.status = "200";
-
+      response.statusDescription = "OK";
       response.body = bufferedImage.toString("base64");
       response.bodyEncoding = "base64";
+      if (response.headers)
+        response.headers["content-type"] = [
+          { key: "Content-Type", value: "image/" + extension },
+        ];
 
       console.log("Response is ready");
 

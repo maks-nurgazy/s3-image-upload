@@ -19,6 +19,8 @@ const variables = {
 
 exports.handler = async (event: CloudFrontRequestEvent) => {
   const request: CloudFrontRequest = event.Records[0].cf.request;
+  console.log("beginning of request");
+  console.log(request);
 
   // querystring => d=300x300
   // after parse params will be => {d: '300x300'}
@@ -87,6 +89,8 @@ exports.handler = async (event: CloudFrontRequestEvent) => {
 
   // URI must start with `/` slash
   request.uri = resUri;
+  console.log("printing viewer request object");
+  console.log(JSON.stringify(request));
 
   return request;
 };
