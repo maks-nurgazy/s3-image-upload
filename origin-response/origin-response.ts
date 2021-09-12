@@ -82,6 +82,7 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
       console.log(headers);
 
       response.status = "200";
+
       response.body = bufferedImage.toString("base64");
       response.bodyEncoding = "base64";
 
