@@ -51,8 +51,23 @@ exports.handler = async (event: CloudFrontResponseEvent) => {
 
       console.log("before image resizing");
 
+      /*
+      cover: (default) Preserving aspect ratio, ensure the image covers both provided
+            dimensions by cropping/clipping to fit.
+      contain: Preserving aspect ratio, contain within both
+            provided dimensions using "letterboxing" where necessary.
+      fill: Ignore the aspect ratio of the input and stretch
+            to both provided dimensions.
+      inside: Preserving aspect ratio, resize the image to be as large
+             as possible while ensuring its dimensions are less than or equal to both those specified.
+      outside: Preserving aspect ratio, resize the image to be as small as
+             possible while ensuring its dimensions are greater than or equal to both those specified.
+      */
       const resizedImage = await sharp(originalImage.Body)
-        .resize(width, height)
+        .resize(width, height, {
+          fit: "contain",
+          background: { r: 255, g: 255, b: 255, alpha: 0.5 },
+        })
         .toFormat(extension);
 
       console.log("printing resizedImage");
